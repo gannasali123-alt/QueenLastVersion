@@ -63,14 +63,14 @@ class User extends Authenticatable
 
 
 
-//         public function applications()
-//     {
+    public function applications()
+    {
+        return $this->hasMany(Application::class);
+    }
 
-//     }
-
-//     public function likedPosts()
-// {
-//     return $this->belongsToMany(UniversityPost::class, 'post_likes', 'user_id', 'university_posts_id')
-//         ->withTimestamps();
-// }
+    public function likedPosts()
+{
+    return $this->belongsToMany(UniversityPost::class, 'post_likes', 'user_id', 'university_posts_id')
+        ->withTimestamps();
+}
 }
