@@ -68,6 +68,7 @@ class UniversityController extends Controller
       'universityMajors' => function ($query) {
         $query->where('published', true);
       },
+      
       'universityMajors.major.college'
     ]);
 
@@ -90,7 +91,7 @@ class UniversityController extends Controller
         return [
           'public_id' => $image->public_id,
           'path_main' => $this->fileUrl($image->path_main),
-          'path_thumb' => $image->path_thumb,
+          'path_thumb' => $this->fileUrl($image->path_thumb),
           'priority' => $image->priority,
         ];
       }),
