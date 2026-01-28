@@ -16,7 +16,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 
 type University = {
   public_id: string;
@@ -137,56 +136,48 @@ export default function Universities() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     layout
+                    className="group relative overflow-hidden rounded-2xl border bg-card shadow-sm hover:shadow-xl transition-all duration-300"
                   >
                     <Link href={`/universities/${uni.public_id}`}>
-                      <Card className="overflow-hidden hover:shadow-lg transition-all cursor-pointer h-full flex flex-col group">
-                        <div className="aspect-video overflow-hidden relative">
-                          <img
-                            src={uni.image_background ?? uni.image_path ?? "https://via.placeholder.com/640x360"}
-                            alt={uni.name ?? "University"}
-                            className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
-                          />
-                          <div className="absolute -bottom-4 left-4 rtl:left-auto rtl:right-4 z-10">
-                            <div className="w-16 h-16 aspect-square rounded-full overflow-hidden shadow-md border-4 border-white">
-                              <img
-                                src={uni.avatar_url ?? "https://via.placeholder.com/120"}
-                                alt="Logo"
-                                className="w-full h-full object-cover rounded-full"
-                              />
-                            </div>
-                          </div>
-                          <div className="absolute top-2 right-2 bg-background/90 backdrop-blur px-2 py-1 rounded text-xs font-bold flex items-center gap-1">
-                            <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+                      <div className="aspect-[4/3] overflow-hidden">
+                        <img
+                          src={uni.image_background ?? uni.image_path ?? "https://via.placeholder.com/640x360"}
+                          alt={uni.name ?? "University"}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                      </div>
+                      <div className="p-6">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-bold text-lg line-clamp-1">{uni.name}</h3>
+                          <div className="flex items-center gap-1 text-secondary-foreground bg-secondary/20 px-2 py-1 rounded text-xs font-bold">
+                            <Star className="h-3 w-3 fill-current" />
                             {uni.rating ?? "-"}
                           </div>
                         </div>
-                        <CardHeader className="pt-8">
-                          <h3 className="text-xl font-bold">{uni.name}</h3>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                          {uni.description}
+                        </p>
+                        <div className="flex items-center justify-between text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
                             <MapPin className="h-4 w-4" />
-                            {uni.location}
-                          </div>
-                        </CardHeader>
-                        <CardContent className="flex-1">
-                          <p className="text-sm text-muted-foreground line-clamp-3">
-                            {uni.description}
-                          </p>
-                        </CardContent>
-                        <CardFooter className="border-t pt-4 flex justify-between items-center bg-muted/20">
-                          <span className="font-bold text-primary">
-                            {typeof uni.fees === "number"
-                              ? uni.fees === 0
-                                ? language === "ar"
-                                  ? "مجاني"
-                                  : "Free"
-                                : `${uni.fees.toLocaleString()} SAR`
-                              : "Free"}
+                            {uni.address}
                           </span>
-                          <Button variant="ghost" size="sm" className="hover:bg-primary hover:text-white transition-colors">
-                            {t('viewDetails')}
-                          </Button>
-                        </CardFooter>
-                      </Card>
+                        </div>
+                        <div className="mt-4 pt-4 border-t flex justify-between items-center">
+                           <span className="font-bold text-primary">
+                             {typeof uni.fees === "number"
+                               ? uni.fees === 0
+                                 ? language === "ar"
+                                   ? "مجاني"
+                                   : "Free"
+                                 : `${uni.fees.toLocaleString()} SAR`
+                               : "Free"}
+                           </span>
+                           <Button size="sm" variant="ghost" className="hover:bg-primary/10 hover:text-primary">
+                             {t('viewDetails')}
+                           </Button>
+                        </div>
+                      </div>
                     </Link>
                   </motion.div>
                 ))}

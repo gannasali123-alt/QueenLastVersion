@@ -65,11 +65,15 @@ class UniversityController extends Controller
       'images' => function ($query) {
         $query->where('is_active', true)->orderBy('priority');
       },
+
       'universityMajors' => function ($query) {
         $query->where('published', true);
       },
-      
-      'universityMajors.major.college'
+      'universityMajors.major.college',
+
+        'universityPosts' => function ($query) {
+        $query->where('university_id', true);
+      },
     ]);
 
     $universityData = [
@@ -82,6 +86,20 @@ class UniversityController extends Controller
       'phone' => $university->phone,
       'type' => $university->type,
               'rating' => $university->starAvg(),
+
+
+        'articles' => $university->universityPosts->map(function ($post) {
+        return [
+          'public_id' => $post->public_id,
+          'title' => $post->title,
+          'content' => $post->content,
+          'created_at' => $post->created_at->toDateTimeString(),
+          'likes_count' => $post->likes()->count(),
+        ];
+      }),
+
+
+
 
       // 'status' => $university->status,
       'image_path' => $this->fileUrl($university->image_path),

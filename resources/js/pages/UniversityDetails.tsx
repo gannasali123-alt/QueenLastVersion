@@ -1,15 +1,8 @@
-import { Link, usePage } from "@inertiajs/react";
-import { useMemo, useState } from "react";
-import { router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { useMemo, useState } from 'react';
 
-import { Layout } from "@/components/layout/Layout";
-import AppLayout from "@/layouts/AppLayout";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Star, GraduationCap, Clock, DollarSign, BookOpen, ArrowLeft, Heart, ArrowRight, CheckCircle2 } from "lucide-react";
-import NotFound from "./not-found";
-import { motion } from "framer-motion";
+import { Layout } from '@/components/layout/Layout';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -17,17 +10,34 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useLanguage } from '@/contexts/LanguageContext';
+import AppLayout from '@/layouts/AppLayout';
+import { motion } from 'framer-motion';
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  CheckCircle2,
+  Clock,
+  DollarSign,
+  GraduationCap,
+  Heart,
+  MapPin,
+  Star,
+} from 'lucide-react';
+import NotFound from './not-found';
 // import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { toast } from "sonner";
+} from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 type UniversityImage = {
   public_id: string;
@@ -58,6 +68,13 @@ type UniversityMajor = {
     };
   };
 };
+type UniversityPost = {
+  public_id: string;
+  title: string | null;
+  content: string | null;
+  created_at: string | null;
+  likes_count: number | null;
+}
 
 type UniversityData = {
   public_id: string;
@@ -76,6 +93,7 @@ type UniversityData = {
   fees?: number | null;
   images?: UniversityImage[];
   universityMajors?: UniversityMajor[];
+  articles?: UniversityPost[];
 };
 
 type PageProps = {
@@ -85,21 +103,63 @@ type PageProps = {
 
 export default function UniversityDetails() {
   const { t, language } = useLanguage();
-  const {universityData } = usePage<PageProps>().props;
+  const { universityData } = usePage<PageProps>().props;
 
   const [likedArticles, setLikedArticles] = useState<Set<string>>(new Set());
   const [userRating, setUserRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [isRated, setIsRated] = useState(false);
-  const [currentUniRating, setCurrentUniRating] = useState<number | null>(null);
+  const [currentUniRating, setCurrentUniRating] = useState<number | null>(
+    null,
+  );
 
   const uni = universityData ?? null;
   const { universityMajors = [] } = uni ?? {};
+  const placeholderImage = 'https://via.placeholder.com/800x450';
+
+  const galleryImages = useMemo(() => {
+    const images = uni?.images?.filter((image) => image.path_main) ?? [];
+
+    if (images.length > 0) {
+      return images;
+    }
+
+    const fallback =
+      uni?.image_path ?? uni?.image_background ?? placeholderImage;
+
+    return [
+      {
+        public_id: 'fallback',
+        path_main: fallback,
+        path_thumb: fallback,
+        priority: 0,
+        is_active: true,
+      },
+    ];
+  }, [uni]);
+
+  const galleryDragLimit = Math.max(0, (galleryImages.length - 1) * 320);
 
   const groupedColleges = useMemo(() => {
-    if (!universityMajors || universityMajors.length === 0) return [] as Array<{ id: string; name: string; description: string | null; image: string | null; majors: any[] }>;
+    if (!universityMajors || universityMajors.length === 0)
+      return [] as Array<{
+        id: string;
+        name: string;
+        description: string | null;
+        image: string | null;
+        majors: any[];
+      }>;
 
-    const map = new Map<string, { id: string; name: string; description: string | null; image: string | null; majors: any[] }>();
+    const map = new Map<
+      string,
+      {
+        id: string;
+        name: string;
+        description: string | null;
+        image: string | null;
+        majors: any[];
+      }
+    >();
 
     universityMajors.forEach((um) => {
       const college = um.major.college;
@@ -108,7 +168,7 @@ export default function UniversityDetails() {
       if (!map.has(collegeId)) {
         map.set(collegeId, {
           id: collegeId,
-          name: college.name ?? "",
+          name: college.name ?? '',
           description: college.description,
           image: college.image_path,
           majors: [],
@@ -128,86 +188,139 @@ export default function UniversityDetails() {
     return Array.from(map.values());
   }, [universityMajors]);
 
-  if (!uni) return <AppLayout><NotFound /></AppLayout>;
+  if (!uni)
+    return (
+      <AppLayout>
+        <NotFound />
+      </AppLayout>
+    );
 
   const handleRate = (rating: number) => {
     const isEditing = isRated;
 
     // إرسال التقييم إلى Laravel عبر Inertia
-    router.post(`/universities/${uni.public_id}/rate`, { rating }, {
-      onSuccess: () => {
-        setUserRating(rating);
-        setIsRated(true);
+    router.post(
+      `/universities/${uni.public_id}/rate`,
+      { rating },
+      {
+        onSuccess: () => {
+          setUserRating(rating);
+          setIsRated(true);
 
-        if (uni) {
-          const baseRating = currentUniRating ?? uni.rating ?? 0;
-          const newRating = isEditing
-            ? Number((baseRating + (rating - userRating) * 0.1).toFixed(1))
-            : Number(((baseRating * 10 + rating) / 11).toFixed(1));
+          if (uni) {
+            const baseRating = currentUniRating ?? uni.rating ?? 0;
+            const newRating = isEditing
+              ? Number(
+                (
+                  baseRating +
+                  (rating - userRating) * 0.1
+                ).toFixed(1),
+              )
+              : Number(
+                ((baseRating * 10 + rating) / 11).toFixed(1),
+              );
 
-          setCurrentUniRating(newRating);
-        }
+            setCurrentUniRating(newRating);
+          }
 
-        toast.success(language === 'ar' ? (isEditing ? 'تم تحديث تقييمك بنجاح' : 'شكراً لتقييمك!') : (isEditing ? 'Rating updated successfully' : 'Thank you for your rating!'), {
-          icon: <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 animate-bounce" />,
-          duration: 4000,
-        });
+          toast.success(
+            language === 'ar'
+              ? isEditing
+                ? 'تم تحديث تقييمك بنجاح'
+                : 'شكراً لتقييمك!'
+              : isEditing
+                ? 'Rating updated successfully'
+                : 'Thank you for your rating!',
+            {
+              icon: (
+                <Star className="h-4 w-4 animate-bounce fill-yellow-400 text-yellow-400" />
+              ),
+              duration: 4000,
+            },
+          );
+        },
+        onError: () => {
+          toast.error(
+            language === 'ar'
+              ? 'حدث خطأ أثناء إرسال التقييم'
+              : 'Error submitting rating',
+          );
+        },
       },
-      onError: () => {
-        toast.error(language === 'ar' ? 'حدث خطأ أثناء إرسال التقييم' : 'Error submitting rating');
-      }
-    });
+    );
   };
 
   const toggleLike = (articleId: string, e: React.MouseEvent) => {
     e.stopPropagation();
 
     // إرسال الإعجاب إلى Laravel عبر Inertia
-    router.post(`/articles/${articleId}/like`, {}, {
-      onSuccess: () => {
-        const newLiked = new Set(likedArticles);
-        if (newLiked.has(articleId)) {
-          newLiked.delete(articleId);
-        } else {
-          newLiked.add(articleId);
-        }
-        setLikedArticles(newLiked);
-      }
-    });
+    router.post(
+      `/articles/${articleId}/like`,
+      {},
+      {
+        onSuccess: () => {
+          const newLiked = new Set(likedArticles);
+          if (newLiked.has(articleId)) {
+            newLiked.delete(articleId);
+          } else {
+            newLiked.add(articleId);
+          }
+          setLikedArticles(newLiked);
+        },
+      },
+    );
   };
 
   // Articles placeholder until backend provides them for a university
-  const universityArticles: any[] = [];
+  const universityPosts: any[] = [];
   const uniColleges = groupedColleges;
 
   return (
     <AppLayout>
       <Layout>
         {/* Hero Header */}
-        <div className="relative h-[300px] md:h-[400px] bg-muted overflow-hidden">
+        <div className="relative h-[300px] overflow-hidden bg-muted md:h-[400px]">
           <img
-            src={uni.image_background ?? uni.image_path ?? "https://via.placeholder.com/1200x500"}
-            alt={uni.name ?? "University"}
-            className="w-full h-full object-cover"
+            src={
+              uni.image_background ??
+              uni.image_path ??
+              'https://via.placeholder.com/1200x500'
+            }
+            alt={uni.name ?? 'University'}
+            className="h-full w-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 container mx-auto pb-8 px-4 md:px-0">
-            <div className="flex items-end gap-6 mb-6">
-              <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-background overflow-hidden bg-white shadow-xl flex-shrink-0">
-                <img src={uni.avatar_url ?? "https://via.placeholder.com/200"} alt="Logo" className="w-full h-full object-contain p-2" />
+          <div className="absolute right-0 bottom-0 left-0 container mx-auto px-4 pb-8 md:px-0">
+            <div className="mb-6 flex items-end gap-6">
+              <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-full border-4 border-background bg-white shadow-xl md:h-32 md:w-32">
+                <img
+                  src={
+                    uni.avatar_url ??
+                    'https://via.placeholder.com/200'
+                  }
+                  alt="Logo"
+                  className="h-full w-full object-contain p-2"
+                />
               </div>
               <div className="flex-1 pb-2">
                 <Link href="/universities">
-                  <Button variant="ghost" size="sm" className="mb-4 text-white hover:text-white hover:bg-white/20">
-                    <ArrowLeft className="h-4 w-4 mr-2 rtl:ml-2 rtl:mr-0" /> {language === 'ar' ? 'العودة للقائمة' : 'Back to List'}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mb-4 text-white hover:bg-white/20 hover:text-white"
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4 rtl:mr-0 rtl:ml-2" />{' '}
+                    {language === 'ar'
+                      ? 'العودة للقائمة'
+                      : 'Back to List'}
                   </Button>
                 </Link>
-                <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-2 shadow-sm">
+                <h1 className="mb-2 text-3xl font-bold text-foreground shadow-sm md:text-5xl">
                   {language === 'ar' ? uni.nameAr : uni.name}
                 </h1>
               </div>
             </div>
-            <div className="flex flex-col md:flex-row justify-between items-end gap-4">
+            <div className="flex flex-col items-end justify-between gap-4 md:flex-row">
               <div className="flex flex-wrap items-center gap-4 text-foreground/80">
                 <div className="flex items-center gap-1 text-sm md:text-base">
                   <MapPin className="h-4 w-4" />
@@ -216,43 +329,58 @@ export default function UniversityDetails() {
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1 text-sm md:text-base">
                     <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
-                    <span>{currentUniRating ?? uni.rating ?? '-'} </span>
+                    <span>
+                      {currentUniRating ??
+                        uni.rating ??
+                        '-'}{' '}
+                    </span>
                   </div>
 
-                  <div className="flex flex-col gap-1 w-full sm:w-auto">
-                    <div className="flex items-center justify-between sm:justify-start gap-1 bg-white/10 backdrop-blur-md rounded-2xl px-4 py-3 border border-white/20 shadow-xl group/rate transition-all hover:bg-white/20">
+                  <div className="flex w-full flex-col gap-1 sm:w-auto">
+                    <div className="group/rate flex items-center justify-between gap-1 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 shadow-xl backdrop-blur-md transition-all hover:bg-white/20 sm:justify-start">
                       <div className="flex items-center gap-1.5">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <button
                             key={star}
-                            onClick={() => handleRate(star)}
-                            onMouseEnter={() => setHoverRating(star)}
-                            onMouseLeave={() => setHoverRating(0)}
-                            className="transition-all duration-300 transform hover:scale-135 focus:outline-none cursor-pointer active:scale-95"
+                            onClick={() =>
+                              handleRate(star)
+                            }
+                            onMouseEnter={() =>
+                              setHoverRating(star)
+                            }
+                            onMouseLeave={() =>
+                              setHoverRating(0)
+                            }
+                            className="transform cursor-pointer transition-all duration-300 hover:scale-135 focus:outline-none active:scale-95"
                           >
                             <Star
-                              className={`h-7 w-7 filter drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] transition-all duration-300 ${
-                                star <= (hoverRating || userRating)
-                                  ? 'fill-yellow-400 text-yellow-400 scale-110'
+                              className={`h-7 w-7 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] filter transition-all duration-300 ${star <=
+                                  (hoverRating ||
+                                    userRating)
+                                  ? 'scale-110 fill-yellow-400 text-yellow-400'
                                   : 'text-white/30 hover:text-white/60'
-                              }`}
+                                }`}
                             />
                           </button>
                         ))}
                       </div>
-                      <div className="flex items-center ml-3 rtl:mr-3 rtl:ml-0 border-l rtl:border-r rtl:border-l-0 border-white/20 pl-3 rtl:pr-3 rtl:pl-0">
+                      <div className="ml-3 flex items-center border-l border-white/20 pl-3 rtl:mr-3 rtl:ml-0 rtl:border-r rtl:border-l-0 rtl:pr-3 rtl:pl-0">
                         {isRated ? (
-                          <div className="flex items-center gap-2 text-green-400 animate-in slide-in-from-bottom-2 duration-500">
-                            <div className="bg-green-400/20 p-1 rounded-full">
+                          <div className="flex animate-in items-center gap-2 text-green-400 duration-500 slide-in-from-bottom-2">
+                            <div className="rounded-full bg-green-400/20 p-1">
                               <CheckCircle2 className="h-4 w-4" />
                             </div>
                             <span className="text-sm font-bold tracking-tight">
-                              {language === 'ar' ? 'تعديل التقييم' : 'Edit Rating'}
+                              {language === 'ar'
+                                ? 'تعديل التقييم'
+                                : 'Edit Rating'}
                             </span>
                           </div>
                         ) : (
-                          <span className="text-sm text-white font-bold tracking-tight whitespace-nowrap opacity-90 group-hover/rate:opacity-100">
-                            {language === 'ar' ? 'قيم الآن' : 'Rate Now'}
+                          <span className="text-sm font-bold tracking-tight whitespace-nowrap text-white opacity-90 group-hover/rate:opacity-100">
+                            {language === 'ar'
+                              ? 'قيم الآن'
+                              : 'Rate Now'}
                           </span>
                         )}
                       </div>
@@ -264,98 +392,160 @@ export default function UniversityDetails() {
           </div>
         </div>
 
-        <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8 max-w-7xl">
+        <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <Tabs defaultValue="overview" className="space-y-8">
-            <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent flex overflow-x-auto scrollbar-hide">
+            <TabsList className="scrollbar-hide flex h-auto w-full justify-start overflow-x-auto rounded-none border-b bg-transparent p-0">
               <TabsTrigger
                 value="overview"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 md:px-6 py-3 text-sm md:text-base whitespace-nowrap"
+                className="rounded-none border-b-2 border-transparent px-4 py-3 text-sm whitespace-nowrap data-[state=active]:border-primary data-[state=active]:bg-transparent md:px-6 md:text-base"
               >
                 {language === 'ar' ? 'نظرة عامة' : 'Overview'}
               </TabsTrigger>
               <TabsTrigger
                 value="colleges"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 md:px-6 py-3 text-sm md:text-base whitespace-nowrap"
+                className="rounded-none border-b-2 border-transparent px-4 py-3 text-sm whitespace-nowrap data-[state=active]:border-primary data-[state=active]:bg-transparent md:px-6 md:text-base"
               >
-                {language === 'ar' ? 'الكليات والتخصصات' : 'Colleges & Majors'}
+                {language === 'ar'
+                  ? 'الكليات والتخصصات'
+                  : 'Colleges & Majors'}
               </TabsTrigger>
               <TabsTrigger
                 value="articles"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 md:px-6 py-3 text-sm md:text-base whitespace-nowrap"
+                className="rounded-none border-b-2 border-transparent px-4 py-3 text-sm whitespace-nowrap data-[state=active]:border-primary data-[state=active]:bg-transparent md:px-6 md:text-base"
               >
-                {language === 'ar' ? 'المقالات والأخبار' : 'Articles & News'}
+                {language === 'ar'
+                  ? 'المقالات والأخبار'
+                  : 'Articles & News'}
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="md:col-span-2 space-y-6">
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+                <div className="space-y-6 md:col-span-2">
                   <section>
-                    <h2 className="text-2xl font-bold mb-4">{language === 'ar' ? 'عن الجامعة' : 'About University'}</h2>
-                    <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+                    <h2 className="mb-4 text-2xl font-bold">
+                      {language === 'ar'
+                        ? 'عن الجامعة'
+                        : 'About University'}
+                    </h2>
+                    <p className="text-base leading-relaxed text-muted-foreground md:text-lg">
                       {uni.description}
                     </p>
                   </section>
 
                   <section>
-                    <h2 className="text-2xl font-bold mb-4">{language === 'ar' ? 'معرض الصور' : 'Gallery'}</h2>
-                    <div className="relative overflow-hidden group/gallery">
+                    <h2 className="mb-4 text-2xl font-bold">
+                      {language === 'ar'
+                        ? 'معرض الصور'
+                        : 'Gallery'}
+                    </h2>
+                    <div className="group/gallery relative overflow-hidden">
                       <motion.div
-                        className="flex gap-4 cursor-grab active:cursor-grabbing"
+                        className="flex cursor-grab gap-4 active:cursor-grabbing"
                         drag="x"
-                        dragConstraints={{ right: 0, left: -400 }}
-                        animate={{
-                          x: [0, -200, 0],
+                        dragConstraints={{
+                          right: 0,
+                          left: -galleryDragLimit,
                         }}
-                        transition={{
-                          duration: 20,
-                          repeat: Infinity,
-                          ease: "linear",
-                          repeatType: "reverse"
-                        }}
+                        dragElastic={0.08}
+                        dragMomentum={true}
+                        animate={
+                          galleryImages.length > 1
+                            ? { x: [0, -200, 0] }
+                            : { x: 0 }
+                        }
+                        transition={
+                          galleryImages.length > 1
+                            ? {
+                              duration: 20,
+                              repeat: Infinity,
+                              ease: 'linear',
+                              repeatType:
+                                'reverse',
+                            }
+                            : undefined
+                        }
                       >
-                        <div className="min-w-[300px] md:min-w-[400px] aspect-video bg-muted rounded-lg overflow-hidden border">
-                          <img src={uni.image_path ?? uni.image_background ?? "https://via.placeholder.com/800x450"} className="w-full h-full object-cover hover:scale-105 transition-transform" />
-                        </div>
-                        <div className="min-w-[300px] md:min-w-[400px] aspect-video bg-muted rounded-lg overflow-hidden border">
-                          <img src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&auto=format&fit=crop&q=60" className="w-full h-full object-cover hover:scale-105 transition-transform" />
-                        </div>
-                        <div className="min-w-[300px] md:min-w-[400px] aspect-video bg-muted rounded-lg overflow-hidden border">
-                          <img src="https://images.unsplash.com/photo-1541339907198-e08756ebafe3?w=800&auto=format&fit=crop&q=60" className="w-full h-full object-cover hover:scale-105 transition-transform" />
-                        </div>
+                        {galleryImages.map(
+                          (image, index) => (
+                            <div
+                              key={`${image.public_id}-${index}`}
+                              className="aspect-video min-w-[300px] overflow-hidden rounded-lg border bg-muted md:min-w-[400px]"
+                            >
+                              <img
+                                src={
+                                  image.path_main ??
+                                  placeholderImage
+                                }
+                                className="h-full w-full object-cover transition-transform hover:scale-105"
+                                alt={
+                                  uni.name ??
+                                  'University image'
+                                }
+                              />
+                            </div>
+                          ),
+                        )}
                       </motion.div>
-                      <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-background to-transparent pointer-events-none z-10" />
-                      <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-background to-transparent pointer-events-none z-10" />
+                      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-background to-transparent" />
+                      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-background to-transparent" />
                     </div>
                   </section>
                 </div>
 
                 <div className="space-y-6">
-                   <Card className="border-primary/10">
-                     <CardContent className="pt-6 space-y-4">
-                       <h3 className="font-bold text-lg border-b pb-2">{language === 'ar' ? 'حقائق سريعة' : 'Key Facts'}</h3>
-                       <div className="space-y-3">
-                         <div className="flex justify-between items-center py-2 border-b border-dashed">
-                           <span className="text-muted-foreground flex items-center gap-2 text-sm"><DollarSign className="h-4 w-4"/> {language === 'ar' ? 'الرسوم' : 'Tuition'}</span>
-                           <span className="font-medium text-sm">
-                             {typeof uni.fees === 'number'
-                               ? uni.fees === 0
-                                 ? (language === 'ar' ? 'مجاني' : 'Free')
-                                 : `${uni.fees} SAR`
-                               : '—'}
-                           </span>
-                         </div>
-                         <div className="flex justify-between items-center py-2 border-b border-dashed">
-                           <span className="text-muted-foreground flex items-center gap-2 text-sm"><GraduationCap className="h-4 w-4"/> {language === 'ar' ? 'تأسست' : 'Founded'}</span>
-                           <span className="font-medium text-sm">1957</span>
-                         </div>
-                         <div className="flex justify-between items-center py-2 border-b border-dashed">
-                           <span className="text-muted-foreground flex items-center gap-2 text-sm"><BookOpen className="h-4 w-4"/> {language === 'ar' ? 'البرامج' : 'Programs'}</span>
-                           <span className="font-medium text-sm">120+</span>
-                         </div>
-                       </div>
-                     </CardContent>
-                   </Card>
+                  <Card className="border-primary/10">
+                    <CardContent className="space-y-4 pt-6">
+                      <h3 className="border-b pb-2 text-lg font-bold">
+                        {language === 'ar'
+                          ? 'حقائق سريعة'
+                          : 'Key Facts'}
+                      </h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between border-b border-dashed py-2">
+                          <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <DollarSign className="h-4 w-4" />{' '}
+                            {language === 'ar'
+                              ? 'الرسوم'
+                              : 'Tuition'}
+                          </span>
+                          <span className="text-sm font-medium">
+                            {typeof uni.fees ===
+                              'number'
+                              ? uni.fees === 0
+                                ? language ===
+                                  'ar'
+                                  ? 'مجاني'
+                                  : 'Free'
+                                : `${uni.fees} SAR`
+                              : '—'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between border-b border-dashed py-2">
+                          <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <GraduationCap className="h-4 w-4" />{' '}
+                            {language === 'ar'
+                              ? 'تأسست'
+                              : 'Founded'}
+                          </span>
+                          <span className="text-sm font-medium">
+                            1957
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between border-b border-dashed py-2">
+                          <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <BookOpen className="h-4 w-4" />{' '}
+                            {language === 'ar'
+                              ? 'البرامج'
+                              : 'Programs'}
+                          </span>
+                          <span className="text-sm font-medium">
+                            120+
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
             </TabsContent>
@@ -363,122 +553,255 @@ export default function UniversityDetails() {
             <TabsContent value="colleges">
               <div className="space-y-8">
                 {uniColleges.map((college) => (
-                  <Card key={college.id} className="overflow-hidden border-primary/10">
-                     <div className="bg-muted/30 p-4 border-b flex items-center gap-4">
-                       <div className="h-10 w-10 md:h-12 md:w-12 rounded bg-white overflow-hidden border">
-                          <img src={college.image ?? "https://via.placeholder.com/120"} className="h-full w-full object-cover" />
-                       </div>
-                       <h3 className="text-lg md:text-xl font-bold">{college.name}</h3>
-                     </div>
-                     <div className="overflow-x-auto">
-                       <Table>
-                         <TableHeader>
-                           <TableRow>
-                             <TableHead className="min-w-[200px]">{language === 'ar' ? 'التخصص' : 'Major'}</TableHead>
-                             <TableHead>{language === 'ar' ? 'المدة' : 'Duration'}</TableHead>
-                             <TableHead>{language === 'ar' ? 'المعدل' : 'GPA'}</TableHead>
-                             <TableHead>{language === 'ar' ? 'الرسوم' : 'Fees'}</TableHead>
-                             <TableHead className="text-right">{language === 'ar' ? 'تقديم' : 'Action'}</TableHead>
-                           </TableRow>
-                         </TableHeader>
-                         <TableBody>
-                           {college.majors.map((major) => (
-                             <TableRow key={major.id}>
-                               <TableCell className="font-medium">
-                                 <div className="font-bold">{major.name}</div>
-                                 <div className="text-xs text-muted-foreground mt-1 max-w-[300px] line-clamp-2">
-                                   {major.description || ''}
-                                 </div>
-                               </TableCell>
-                               <TableCell>
-                                 <div className="flex items-center gap-1 text-xs md:text-sm">
-                                   <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                                   {major.years ?? '-'} {language === 'ar' ? 'سنوات' : 'Years'}
-                                 </div>
-                               </TableCell>
-                               <TableCell className="text-xs md:text-sm">{major.gpa ?? '-'}</TableCell>
-                               <TableCell className="font-bold text-xs md:text-sm whitespace-nowrap">
-                                 {typeof major.fees === 'number' ? `${major.fees.toLocaleString()} SAR` : '—'}
-                               </TableCell>
-                               <TableCell className="text-right">
-                                 <Link href={`/apply/${uni.id}?major=${major.id}`}>
-                                   <Button size="sm" className="bg-secondary text-secondary-foreground hover:bg-secondary/90 font-bold h-8 px-4">
-                                     {t('apply')}
-                                   </Button>
-                                 </Link>
-                               </TableCell>
-                             </TableRow>
-                           ))}
-                         </TableBody>
-                       </Table>
-                     </div>
+                  <Card
+                    key={college.id}
+                    className="overflow-hidden border-primary/10"
+                  >
+                    <div className="flex items-center gap-4 border-b bg-muted/30 p-4">
+                      <div className="h-10 w-10 overflow-hidden rounded border bg-white md:h-12 md:w-12">
+                        <img
+                          src={
+                            college.image ??
+                            'https://via.placeholder.com/120'
+                          }
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                      <h3 className="text-lg font-bold md:text-xl">
+                        {college.name}
+                      </h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="min-w-[200px]">
+                              {language === 'ar'
+                                ? 'التخصص'
+                                : 'Major'}
+                            </TableHead>
+                            <TableHead>
+                              {language === 'ar'
+                                ? 'المدة'
+                                : 'Duration'}
+                            </TableHead>
+                            <TableHead>
+                              {language === 'ar'
+                                ? 'المعدل'
+                                : 'GPA'}
+                            </TableHead>
+                            <TableHead>
+                              {language === 'ar'
+                                ? 'الرسوم'
+                                : 'Fees'}
+                            </TableHead>
+                            <TableHead className="text-right">
+                              {language === 'ar'
+                                ? 'تقديم'
+                                : 'Action'}
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {college.majors.map(
+                            (major) => (
+                              <TableRow
+                                key={major.id}
+                              >
+                                <TableCell className="font-medium">
+                                  <div className="font-bold">
+                                    {
+                                      major.name
+                                    }
+                                  </div>
+                                  <div className="mt-1 line-clamp-2 max-w-[300px] text-xs text-muted-foreground">
+                                    {major.description ||
+                                      ''}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-1 text-xs md:text-sm">
+                                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                                    {major.years ??
+                                      '-'}{' '}
+                                    {language ===
+                                      'ar'
+                                      ? 'سنوات'
+                                      : 'Years'}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-xs md:text-sm">
+                                  {major.gpa ??
+                                    '-'}
+                                </TableCell>
+                                <TableCell className="text-xs font-bold whitespace-nowrap md:text-sm">
+                                  {typeof major.fees ===
+                                    'number'
+                                    ? `${major.fees.toLocaleString()} SAR`
+                                    : '—'}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <Link
+                                    href={`/apply/${uni.id}?major=${major.id}`}
+                                  >
+                                    <Button
+                                      size="sm"
+                                      className="h-8 bg-secondary px-4 font-bold text-secondary-foreground hover:bg-secondary/90"
+                                    >
+                                      {t(
+                                        'apply',
+                                      )}
+                                    </Button>
+                                  </Link>
+                                </TableCell>
+                              </TableRow>
+                            ),
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </Card>
                 ))}
               </div>
             </TabsContent>
 
+{/* public_id: string;
+  title: string | null;
+  content: string | null;
+  created_at: string | null;
+  likes_count: number | null; */}
+
+
+
+
+
+
+
+
+
             <TabsContent value="articles">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {universityArticles.length > 0 ? universityArticles.map((article) => (
-                  <Card key={article.id} className="overflow-hidden hover:shadow-md transition-all border-border/50 group">
-                    <div className="flex flex-col sm:flex-row h-full">
-                      <div className="w-full sm:w-1/3 h-48 sm:h-auto relative overflow-hidden">
-                        <img src={article.image} className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105" />
-                      </div>
-                      <div className="p-4 md:p-6 flex-1 flex flex-col justify-between">
-                        <div>
-                          <h3 className="font-bold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">{language === 'ar' ? article.titleAr : article.title}</h3>
-                          <p className="text-sm text-muted-foreground line-clamp-2">{article.content}</p>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {universityPosts.length > 0 ? (
+                  universityPosts.map((article) => (
+                    <Card
+                      key={article.id}
+                      className="group overflow-hidden border-border/50 transition-all hover:shadow-md"
+                    >
+                      <div className="flex h-full flex-col sm:flex-row">
+                        <div className="relative h-48 w-full overflow-hidden sm:h-auto sm:w-1/3">
+                          <img
+                            src={article.image }
+                            className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
+                          />
                         </div>
-                        <div className="mt-4 flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="text-xs text-muted-foreground flex items-center gap-2">
-                              <BookOpen className="h-3 w-3" />
-                              {article.date}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className={`h-8 w-8 rounded-full transition-colors ${likedArticles.has(article.id) ? 'text-red-500 hover:text-red-600' : 'text-muted-foreground hover:text-red-500'}`}
-                                onClick={(e) => toggleLike(article.id, e)}
-                              >
-                                <Heart className={`h-4 w-4 ${likedArticles.has(article.id) ? 'fill-current' : ''}`} />
-                              </Button>
-                              <span className="text-xs text-muted-foreground">
-                                {article.likes + (likedArticles.has(article.id) ? 1 : 0)}
-                              </span>
-                            </div>
+                        <div className="flex flex-1 flex-col justify-between p-4 md:p-6">
+                          <div>
+                            <h3 className="mb-2 line-clamp-2 text-lg font-bold transition-colors group-hover:text-primary">
+                              {language === 'ar'
+                                ? article.titleAr
+                                : article.title}
+                            </h3>
+                            <p className="line-clamp-2 text-sm text-muted-foreground">
+                              {article.content}
+                            </p>
                           </div>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="link" size="sm" className="p-0 h-auto font-bold text-primary text-xs">
-                                {t('readMore')} <ArrowRight className="ml-1 h-3 w-3 rtl:rotate-180 rtl:ml-0 rtl:mr-1" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl">
-                              <DialogHeader>
-                                <DialogTitle className="text-2xl font-bold">{language === 'ar' ? article.titleAr : article.title}</DialogTitle>
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
-                                  <span className="font-bold text-primary">{language === 'ar' ? article.universityNameAr : article.universityName}</span>
-                                  <span>{article.date}</span>
-                                </div>
-                              </DialogHeader>
-                              <div className="mt-4 space-y-4">
-                                <img src={article.image} className="w-full h-64 object-cover rounded-lg" alt="" />
-                                <p className="text-muted-foreground leading-relaxed text-lg">
-                                  {article.content}
-                                </p>
+                          <div className="mt-4 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <BookOpen className="h-3 w-3" />
+                                {article.created_at}
                               </div>
-                            </DialogContent>
-                          </Dialog>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={`h-8 w-8 rounded-full transition-colors ${likedArticles.has(article.id) ? 'text-red-500 hover:text-red-600' : 'text-muted-foreground hover:text-red-500'}`}
+                                  onClick={(
+                                    e,
+                                  ) =>
+                                    toggleLike(
+                                      article.id,
+                                      e,
+                                    )
+                                  }
+                                >
+                                  <Heart
+                                    className={`h-4 w-4 ${likedArticles.has(article.id) ? 'fill-current' : ''}`}
+                                  />
+                                </Button>
+                                <span className="text-xs text-muted-foreground">
+                                  {article.likes_count +
+                                    (likedArticles.has(
+                                      article.id,
+                                    )
+                                      ? 1
+                                      : 0)}
+                                </span>
+                              </div>
+                            </div>
+                            <Dialog>
+                              <DialogTrigger
+                                asChild
+                              >
+                                <Button
+                                  variant="link"
+                                  size="sm"
+                                  className="h-auto p-0 text-xs font-bold text-primary"
+                                >
+                                  {t(
+                                    'readMore',
+                                  )}{' '}
+                                  <ArrowRight className="ml-1 h-3 w-3 rtl:mr-1 rtl:ml-0 rtl:rotate-180" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl">
+                                <DialogHeader>
+                                  <DialogTitle className="text-2xl font-bold">
+                                    {language ===
+                                      'ar'
+                                      ? article.titleAr
+                                      : article.title}
+                                  </DialogTitle>
+                                  <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
+                                    <span className="font-bold text-primary">
+                                      {language ===
+                                        'ar'
+                                        ? article.universityNameAr
+                                        : article.universityName}
+                                    </span>
+                                    <span>
+                                      {
+                                        article.date
+                                      }
+                                    </span>
+                                  </div>
+                                </DialogHeader>
+                                <div className="mt-4 space-y-4">
+                                  <img
+                                    src={
+                                      article.image
+                                    }
+                                    className="h-64 w-full rounded-lg object-cover"
+                                    alt=""
+                                  />
+                                  <p className="text-lg leading-relaxed text-muted-foreground">
+                                    {
+                                      article.content
+                                    }
+                                  </p>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Card>
-                )) : (
-                  <div className="col-span-full text-center py-12 text-muted-foreground bg-muted/20 rounded-xl border border-dashed">
-                    {language === 'ar' ? 'لا توجد مقالات لهذه الجامعة حالياً' : 'No articles available for this university yet.'}
+                    </Card>
+                  ))
+                ) : (
+                  <div className="col-span-full rounded-xl border border-dashed bg-muted/20 py-12 text-center text-muted-foreground">
+                    {language === 'ar'
+                      ? 'لا توجد مقالات لهذه الجامعة حالياً'
+                      : 'No articles available for this university yet.'}
                   </div>
                 )}
               </div>
