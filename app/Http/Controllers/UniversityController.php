@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
-
+use Mews\Purifier\Facades\Purifier;
 class UniversityController extends Controller
 {
   /**
@@ -71,9 +71,9 @@ class UniversityController extends Controller
       },
       'universityMajors.major.college',
 
-        'universityPosts' => function ($query) {
-        $query->where('university_id', true);
-      },
+      //   'universityPosts' => function ($query) {
+      //   $query->where('university_id',$university->id)->orderBy('created_at', 'desc');
+      // },
     ]);
 
     $universityData = [
@@ -137,13 +137,13 @@ class UniversityController extends Controller
         ];
       }),
     ];
-
+// dd($universityData);
     return Inertia::render('UniversityDetails', [
+
       'public_id' => $university->public_id,
       'universityData' => $universityData,
     ]);
   }
-
   /**
    * Resolve storage or absolute URLs for media fields.
    */

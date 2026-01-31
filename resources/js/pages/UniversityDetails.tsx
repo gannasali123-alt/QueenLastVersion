@@ -1,6 +1,6 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
-
+import { stripHtml } from "string-strip-html";
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import {
@@ -73,7 +73,7 @@ type UniversityPost = {
   title: string | null;
   content: string | null;
   created_at: string | null;
-  likes_count: number | null;
+  likes_count: number | 0;
 }
 
 type UniversityData = {
@@ -272,7 +272,7 @@ export default function UniversityDetails() {
   };
 
   // Articles placeholder until backend provides them for a university
-  const universityPosts: any[] = [];
+  const universityPosts = uni?.articles ?? [];
   const uniColleges = groupedColleges;
 
   return (
@@ -555,7 +555,7 @@ export default function UniversityDetails() {
                 {uniColleges.map((college) => (
                   <Card
                     key={college.id}
-                    className="overflow-hidden border-primary/10"
+                    className="overflow-hidden border-primary/10  gap-0 rounded-xl border py-1"
                   >
                     <div className="flex items-center gap-4 border-b bg-muted/30 p-4">
                       <div className="h-10 w-10 overflow-hidden rounded border bg-white md:h-12 md:w-12">
@@ -615,8 +615,9 @@ export default function UniversityDetails() {
                                     }
                                   </div>
                                   <div className="mt-1 line-clamp-2 max-w-[300px] text-xs text-muted-foreground">
-                                    {major.description ||
-                                      ''}
+                                    {/* {major.description ||
+                                      ''} */}
+                                         {stripHtml(major.description|| '').result}
                                   </div>
                                 </TableCell>
                                 <TableCell>
@@ -642,7 +643,7 @@ export default function UniversityDetails() {
                                 </TableCell>
                                 <TableCell className="text-right">
                                   <Link
-                                    href={`/apply/${uni.id}?major=${major.id}`}
+                                    href={`/apply/${uni.public_id}?major=${major.id}`}
                                   >
                                     <Button
                                       size="sm"
@@ -665,11 +666,6 @@ export default function UniversityDetails() {
               </div>
             </TabsContent>
 
-{/* public_id: string;
-  title: string | null;
-  content: string | null;
-  created_at: string | null;
-  likes_count: number | null; */}
 
 
 
@@ -684,13 +680,13 @@ export default function UniversityDetails() {
                 {universityPosts.length > 0 ? (
                   universityPosts.map((article) => (
                     <Card
-                      key={article.id}
+                      key={article.public_id}
                       className="group overflow-hidden border-border/50 transition-all hover:shadow-md"
                     >
                       <div className="flex h-full flex-col sm:flex-row">
                         <div className="relative h-48 w-full overflow-hidden sm:h-auto sm:w-1/3">
                           <img
-                            src={article.image }
+                            src={uni.image_background ?? uni.image_path ?? 'https://via.placeholder.com/800x450'}
                             className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
                           />
                         </div>
@@ -702,7 +698,8 @@ export default function UniversityDetails() {
                                 : article.title}
                             </h3>
                             <p className="line-clamp-2 text-sm text-muted-foreground">
-                              {article.content}
+                                {stripHtml(article.content?? "").result}
+
                             </p>
                           </div>
                           <div className="mt-4 flex items-center justify-between">
@@ -715,24 +712,24 @@ export default function UniversityDetails() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className={`h-8 w-8 rounded-full transition-colors ${likedArticles.has(article.id) ? 'text-red-500 hover:text-red-600' : 'text-muted-foreground hover:text-red-500'}`}
+                                  className={`h-8 w-8 rounded-full transition-colors ${likedArticles.has(article.public_id) ? 'text-red-500 hover:text-red-600' : 'text-muted-foreground hover:text-red-500'}`}
                                   onClick={(
                                     e,
                                   ) =>
                                     toggleLike(
-                                      article.id,
+                                      article.public_id,
                                       e,
                                     )
                                   }
                                 >
                                   <Heart
-                                    className={`h-4 w-4 ${likedArticles.has(article.id) ? 'fill-current' : ''}`}
+                                    className={`h-4 w-4 ${likedArticles.has(article.public_id) ? 'fill-current' : ''}`}
                                   />
                                 </Button>
                                 <span className="text-xs text-muted-foreground">
                                   {article.likes_count +
                                     (likedArticles.has(
-                                      article.id,
+                                      article.public_id,
                                     )
                                       ? 1
                                       : 0)}
@@ -767,11 +764,11 @@ export default function UniversityDetails() {
                                       {language ===
                                         'ar'
                                         ? article.universityNameAr
-                                        : article.universityName}
+                                        : uni.name}
                                     </span>
                                     <span>
                                       {
-                                        article.date
+                                        article.created_at
                                       }
                                     </span>
                                   </div>
@@ -779,15 +776,15 @@ export default function UniversityDetails() {
                                 <div className="mt-4 space-y-4">
                                   <img
                                     src={
-                                      article.image
+                                      uni.image_background ??
+                                      uni.image_path ??
+                                      'https://via.placeholder.com/800x450'
                                     }
                                     className="h-64 w-full rounded-lg object-cover"
                                     alt=""
                                   />
                                   <p className="text-lg leading-relaxed text-muted-foreground">
-                                    {
-                                      article.content
-                                    }
+                                     {stripHtml(article.content?? "").result}
                                   </p>
                                 </div>
                               </DialogContent>

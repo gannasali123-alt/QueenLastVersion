@@ -66,7 +66,7 @@ export default function Articles() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className="overflow-hidden hover:shadow-lg transition-all h-full flex flex-col group border-border/50">
+                <Card className="overflow-hidden hover:shadow-lg transition-all h-full flex flex-col group border-border/50 gap-6 rounded-xl border py-6">
                   <div className="aspect-video overflow-hidden relative">
                     <img
                       src={article.image}
