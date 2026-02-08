@@ -1,38 +1,91 @@
 import { Layout } from "@/components/layout/Layout";
+import { stripHtml } from "string-strip-html";
+
 import AppLayout from "@/layouts/AppLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { colleges, universities } from "@/lib/mockData";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Link, router } from "@inertiajs/react";
-import { Clock, Briefcase, GraduationCap, MapPin, Star, Filter, Search } from "lucide-react";
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Link, usePage } from "@inertiajs/react";
+import {
+  Clock,
+  GraduationCap,
+  MapPin,
+  Star,
+  Filter,
+} from "lucide-react";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+
+/* =======================
+   Types (صح مش any)
+======================= */
+interface Major {
+  id: string;
+  name: string;
+  nameAr: string;
+  description: string;
+  descriptionAr: string;
+  years: number;
+  gpa: number;
+  fees: number;
+  careerOpportunities: string[];
+}
+
+interface College {
+  id: string;
+  name: string;
+  nameAr: string;
+  image: string;
+  majors: Major[];
+}
+
+interface University {
+  id: string;
+  name: string;
+  nameAr: string;
+  location: string;
+  locationAr: string;
+  image: string;
+  rating: number;
+}
+
+interface PageProps {
+  colleges: College[];
+  universities: University[];
+}
+
+/* =======================
+   Component
+======================= */
 export default function Colleges() {
+  const { colleges, universities } = usePage<PageProps>().props;
   const { t, language } = useLanguage();
+
   const [selectedMajorId, setSelectedMajorId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const selectedMajor = colleges.flatMap(c => c.majors).find(m => m.id === selectedMajorId);
-  const offeringUniversities = universities.filter(u => {
-    if (selectedMajorId === 'm1') return true;
-    if (selectedMajorId === 'm2') return u.id === '1' || u.id === '2';
-    if (selectedMajorId === 'm3') return u.id === '2' || u.id === '3';
-    return false;
-  });
+  const selectedMajor = colleges
+    .flatMap(college => college.majors)
+    .find(major => major.id === selectedMajorId);
 
-  const filteredUnis = offeringUniversities.filter(u =>
-    (language === 'ar' ? u.nameAr : u.name).toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (language === 'ar' ? u.locationAr : u.location).toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUnis = universities.filter((uni) =>
+    (
+      language === "ar" ? uni.nameAr : uni.name
+    ).toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (
+      language === "ar" ? uni.locationAr : uni.location
+    ).toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+
 
   return (
     <AppLayout>
@@ -68,7 +121,9 @@ export default function Colleges() {
                         <Card key={major.id} className="p-6 hover:shadow-md transition-all border-border/50">
                           <h4 className="font-bold text-lg mb-2">{language === 'ar' ? major.nameAr : major.name}</h4>
                           <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                            {language === 'ar' ? major.descriptionAr : major.description}
+                            {language === 'ar' ? stripHtml(major.descriptionAr ?? "").result : stripHtml(major.description ?? "").result}
+
+
                           </p>
 
                           <div className="space-y-3 mb-6">

@@ -6,6 +6,7 @@ use Laravel\Fortify\Features;
 use App\Http\Controllers\PostLike\PostLikeController;
 use App\Http\Controllers\Rate\UniversityRatingController;
 use App\Http\Controllers\UniversityController;
+use App\Http\Controllers\CollegeController;
 // use App\Http\Controllers\HomeController;
 
 // Route::get('/', HomeController::class)->name('home');
@@ -33,11 +34,7 @@ Route::get('/', function () {
 Route::get('/universities', [UniversityController::class, 'index'])->name('universities');
 
 
-Route::get('/colleges', function () {
-    return Inertia::render('Colleges', [
-        'canRegister' => Features::enabled(Features::registration()),
-    ]);
-})->name('colleges');
+Route::get('/colleges', [CollegeController::class, 'index'])->name('colleges');
 
 Route::get('/articles', function () {
     return Inertia::render('Articles', [
