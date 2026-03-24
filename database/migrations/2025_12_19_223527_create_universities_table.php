@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->string('address')->nullable();
+            $table->foreignId('address')->constrained('streets')->onDelete('cascade');
             $table->string('phone')->nullable();
             $table->text('description')->nullable();
             $table->enum('status',['pending','approved','rejected'])->default('pending');

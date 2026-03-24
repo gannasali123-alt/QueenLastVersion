@@ -2,14 +2,15 @@
 
 namespace App\Filament\Pages\Auth;
 
-use Filament\Auth\Pages\EditProfile as BaseEditProfile;
-use Filament\Forms\Components\TextInput;
-use Filament\Schemas\Schema;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Form;
+use App\Models\Street;
 use App\Services\Image\ImageProcessor;
+use Filament\Auth\Pages\EditProfile as BaseEditProfile;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Form;
+use Filament\Schemas\Schema;
 use Illuminate\Http\UploadedFile;
 
 class EditUniversityProfile extends BaseEditProfile
@@ -26,9 +27,16 @@ class EditUniversityProfile extends BaseEditProfile
                     ->tel()
                     ->nullable(),
 
-                TextInput::make('address')
-                    ->label('العنوان')
-                    ->nullable(),
+                // TextInput::make('address')
+                //     ->label('العنوان')
+                //     ->nullable(),
+
+                Select::make('address')
+                    ->label('الشارع')
+                    ->options(fn () => Street::query()->pluck('name', 'id')->all())
+                    ->searchable()
+                    ->preload()
+                    ->required(),
 
                 Select::make('type')
                     ->label('نوع الجامعة')

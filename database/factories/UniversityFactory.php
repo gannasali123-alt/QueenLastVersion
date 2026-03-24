@@ -2,9 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Models\Street;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\University>
@@ -25,7 +26,8 @@ class UniversityFactory extends Factory
             'name' => $this->faker->company(),
             'email' => $this->faker->unique()->safeEmail(),
             'password' => bcrypt('password'), // Default password
-            'address' => $this->faker->address(),
+            // 'address' => $this->faker->address(),
+            'address' => Street::inRandomOrder()->first()->id,
             'phone' => $this->faker->phoneNumber(),
             'description' => $this->faker->paragraph(),
             'status' => 'pending',

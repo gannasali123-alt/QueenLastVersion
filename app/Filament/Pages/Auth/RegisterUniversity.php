@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages\Auth;
 
+use App\Models\Street;
 use App\Models\University;
 use Filament\Auth\Pages\Register as BaseRegister;
 use Filament\Forms\Components\FileUpload;
@@ -58,9 +59,18 @@ class RegisterUniversity extends BaseRegister
                             ->required()
                             ->unique(University::class, 'name'),
 
-                        TextInput::make('address')
-                            ->label('العنوان')
-                            ->nullable(),
+              
+                    Select::make('address')
+                            ->label('الشارع')
+                            ->options(fn () => Street::query()->pluck('name', 'id')->all())
+                            ->searchable()
+                            ->preload()
+                            ->required(),
+
+
+
+
+
 
                         Select::make('type')
                             ->label('نوع الجامعة')

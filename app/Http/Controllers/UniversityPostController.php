@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\University;
 use App\Models\UniversityPost;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -9,70 +10,48 @@ use Inertia\Response;
 
 class UniversityPostController extends Controller
 {
-   /**
-    * عرض قائمة المقالات/المنشورات
-    */
-   public function index(Request $request): Response
-   {
-       $query = UniversityPost::with('university')->latest();
+    /**
+     * عرض قائمة المقالات - متوافق 100% مع صفحة Articles.tsx
+     */
+    public function index(Request $request): Response
+    {
+        // استخدام withCount لجلب الإعجابات في استعلام واحد (أداء سريع)
+        // واستخدام with لجلب بيانات الجامعة المحددة فقط
+        $query = UniversityPost::query()
+            ->with(['university:id,public_id,name,avatar_url'])
+            ->withCount('likes')
+            ->latest();
 
-       // Filtering
-       if ($request->has('university_id')) {
-           $query->where('university_id', $request->university_id);
-       }
+        // التصفية والبحث (Backend) لضمان عدم ثقل الصفحة
+        if ($request->filled('university_id') && $request->university_id !== 'all') {
+            $query->whereHas('university', fn($q) => $q->where('public_id', $request->university_id));
+        }
 
-       if ($request->has('search')) {
-           $query->where(function($q) use ($request) {
-               $q->where('title', 'like', '%' . $request->search . '%')
-                 ->orWhere('content', 'like', '%' . $request->search . '%');
-           });
-       }
+        if ($request->filled('search')) {
+            $query->where('title', 'like', '%' . $request->search . '%');
+        }
 
-       $posts = $query->get()->map(function ($post) {
-           return [
-               'public_id' => $post->public_id,
-               'title' => $post->title,
-               'content' => $post->content,
-               'university_id' => $post->university_id,
-               'university' => [
-                   'public_id' => $post->university->public_id,
-                   'name' => $post->university->name,
-               ],
-               'likes_count' => $post->likesCount(),
-               'created_at' => $post->created_at->toISOString(),
-               'updated_at' => $post->updated_at->toISOString(),
-           ];
-       });
+        // تحويل البيانات لتطابق الـ Type "Article" المعرف في React
+        $articles = $query->paginate(15)->through(fn ($post) => [
+            'public_id'   => $post->public_id,
+            'title'       => $post->title,
+            'content'     => $post->content,
+            'image_path'  => $post->image_path ? asset('storage/' . $post->image_path) : null,
+            'created_at'  => $post->created_at->toISOString(),
+            'likes_count' => (int) $post->likes_count,
+            'university'  => $post->university ? [
+                'public_id'  => $post->university->public_id,
+                'name'        => $post->university->name,
+                'avatar_url'  => $post->university->avatar_url ? asset('storage/' . $post->university->avatar_url) : null,
+            ] : null,
+        ]);
 
-       return Inertia::render('Posts', [
-           'postsData' => $posts,
-       ]);
-   }
+        // جلب قائمة الجامعات لفلتر السليكت
+        $universitiesList = University::select('public_id', 'name')->get();
 
-   /**
-    * عرض تفاصيل منشور معين
-    */
-   public function show(UniversityPost $universityPost): Response
-   {
-       $universityPost->load('university');
-
-       $postData = [
-           'public_id' => $universityPost->public_id,
-           'title' => $universityPost->title,
-           'content' => $universityPost->content,
-           'university_id' => $universityPost->university_id,
-           'university' => [
-               'public_id' => $universityPost->university->public_id,
-               'name' => $universityPost->university->name,
-           ],
-           'likes_count' => $universityPost->likesCount(),
-           'created_at' => $universityPost->created_at->toISOString(),
-           'updated_at' => $universityPost->updated_at->toISOString(),
-       ];
-
-       return Inertia::render('PostDetails', [
-           'public_id' => $universityPost->public_id,
-           'postData' => $postData,
-       ]);
-   }
+        return Inertia::render('Articles', [
+            'articlesData'     => $articles,
+            'universitiesList' => $universitiesList,
+        ]);
+    }
 }

@@ -4,16 +4,18 @@ namespace Database\Seeders;
 
 use App\Models\Admin;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use App\Models\User;
+use App\Models\Application;
 use App\Models\College;
 use App\Models\Major;
+use App\Models\PostLike;
+use App\Models\Street;
+use App\Models\Student;
 use App\Models\University;
+use App\Models\UniversityImage;
 use App\Models\UniversityMajor;
 use App\Models\UniversityPost;
-use App\Models\UniversityImage;
-use App\Models\Student;
-use App\Models\Application;
-use App\Models\PostLike;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -30,6 +32,28 @@ class DatabaseSeeder extends Seeder
             'email' => 'Jihad@gmail.com',
             'password' => Hash::make('775585061'),
         ]);
+
+        $streets = [
+            'الستين', 'الخمسين', 'الزبيري', 'هائل', 'حدة', 'تعز', 'المطار',
+            'عمران', 'القيادة', 'الجزائر', 'بغداد', 'صخر', '45', 'الثلاثين',
+            'العدل', 'الرقاص', 'التحرير', 'جمال', 'القصر', 'التلفزيون',
+            '14 أكتوبر', 'الوحدة', 'المدينة', 'عصر', 'السواد', 'دار سلم'
+        ];
+
+        Street::factory()
+            ->count(count($streets)) 
+            ->state(new Sequence(
+                ...array_map(fn ($street) => ['name' => $street], $streets)
+            ))
+            ->create();
+
+
+
+
+
+
+
+
 
         // Users
         User::factory(10)->create();

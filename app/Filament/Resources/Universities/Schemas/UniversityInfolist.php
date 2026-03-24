@@ -19,7 +19,8 @@ class UniversityInfolist
                     ->label('Email address'),
                 TextEntry::make('email_verified_at')
                     ->dateTime(),
-                TextEntry::make('address'),
+                TextEntry::make('street.name')
+                    ->label('الشارع'),
                 TextEntry::make('phone'),
                 TextEntry::make('status'),
                 TextEntry::make('type'),

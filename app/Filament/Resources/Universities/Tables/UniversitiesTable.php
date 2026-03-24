@@ -29,9 +29,10 @@ class UniversitiesTable
                     ->toggleable(isToggledHiddenByDefault: true)
                     ->dateTime()
                     ->sortable(),
-                TextColumn::make('address')
+                TextColumn::make('street.name')
                     ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                                        ->label('الشارع'),
+
                 TextColumn::make('phone')
                     ->searchable(),
 

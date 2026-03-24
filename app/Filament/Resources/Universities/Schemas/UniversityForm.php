@@ -5,17 +5,19 @@ namespace App\Filament\Resources\Universities\Schemas;
 // use App\Livewire\ViewProduct;
 // use Filament\Actions\CreateAction;
 // use Filament\Actions\RestoreAction;
+use App\Models\Street;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\FileUpload;
 // use Filament\Forms\Components\Select;
 // use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Schema;
+// use Illuminate\Support\Facades\Route;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Hash;
-// use Illuminate\Support\Facades\Route;
 use Mokhosh\FilamentRating\Components\Rating;
 // use Mokhosh\FilamentRating\RatingTheme;
 // use Illuminate\Database\Eloquent\Model;
@@ -50,8 +52,15 @@ class UniversityForm
           ->hidden(fn($record, string $operation) => $operation === 'edit')
           ->revealable(),
 
-        TextInput::make('address')
-          ->default(null),
+        Select::make('address')
+          ->label('الشارع')
+          ->options(fn () => Street::query()->pluck('name', 'id')->all())
+          ->searchable()
+          ->preload()
+          ->required(),
+
+
+
         TextInput::make('phone')
           ->tel()
           ->default(null),

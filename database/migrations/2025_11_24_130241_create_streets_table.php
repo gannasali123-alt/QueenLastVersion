@@ -11,14 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('majors', function (Blueprint $table) {
+        Schema::create('streets', function (Blueprint $table) {
             $table->id();
             $table->string('public_id')->unique();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->text('designation_jobs')->nullable();
-            $table->string('study_years')->nullable();
-            $table->foreignId('college_id')->constrained('colleges')->onDelete('cascade');
+            $table->string('name')->unique();
             $table->timestamps();
         });
     }
@@ -28,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('majors');
+        Schema::dropIfExists('streets');
     }
 };

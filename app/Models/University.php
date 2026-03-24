@@ -62,6 +62,11 @@ class University extends Authenticatable implements HasEmailAuthentication, HasA
         return 'public_id';
     }
 
+public function street()
+{
+    return $this->belongsTo(Street::class, 'address'); 
+}
+
     /**
      * Append alias attributes for convenience.
      * `avatar` is an alias to `image_path` and `avatar_url` returns the public URL.
