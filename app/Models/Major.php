@@ -40,4 +40,11 @@ class Major extends Model
 {
   return $this->hasMany(UniversityMajor::class);
 }
+  public function universities()
+{
+    return $this->belongsToMany(
+        University::class,
+        'university_majors'
+    );
+}
 }
