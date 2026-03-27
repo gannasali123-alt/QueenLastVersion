@@ -87,20 +87,6 @@ class UniversityController extends Controller
       'type' => $university->type,
               'rating' => $university->starAvg(),
 
-
-        'articles' => $university->universityPosts->map(function ($post) {
-        return [
-          'public_id' => $post->public_id,
-          'title' => $post->title,
-          'content' => $post->content,
-          'created_at' => $post->created_at->toDateTimeString(),
-          'likes_count' => $post->likes()->count(),
-        ];
-      }),
-
-
-
-
       // 'status' => $university->status,
       'image_path' => $this->fileUrl($university->image_path),
       'image_background' => $this->fileUrl($university->image_background),

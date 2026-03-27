@@ -41,7 +41,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         Street::factory()
-            ->count(count($streets)) 
+            ->count(count($streets))
             ->state(new Sequence(
                 ...array_map(fn ($street) => ['name' => $street], $streets)
             ))
@@ -77,9 +77,7 @@ class DatabaseSeeder extends Seeder
                 'university_id' => $u->id,
             ]);
 
-            UniversityPost::factory(rand(1, 3))->create([
-                'university_id' => $u->id,
-            ]);
+
         });
 
         // Link Universities with Majors
@@ -123,19 +121,6 @@ class DatabaseSeeder extends Seeder
             });
         }
 
-        // Post likes
-        $posts = UniversityPost::all();
-        if ($users->isNotEmpty() && $posts->isNotEmpty()) {
-            // attempt a variety of likes avoiding duplicates by try/catch on unique index
-            PostLike::factory(100)->make()->each(function (PostLike $pl) use ($users, $posts) {
-                $pl->user_id = $users->random()->id;
-                $pl->university_posts_id = $posts->random()->id;
-                try {
-                    $pl->save();
-                } catch (\Throwable $e) {
-                    // ignore duplicates
-                }
-            });
-        }
+
     }
 }

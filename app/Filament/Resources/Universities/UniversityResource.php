@@ -45,12 +45,6 @@ public static function getNavigationBadge(): ?string
         return UniversitiesTable::configure($table);
     }
 
-    public static function getRelations(): array
-    {
-        return [
-            RelationManagers\PostsRelationManager::class,
-        ];
-    }
 
     public static function getPages(): array
     {

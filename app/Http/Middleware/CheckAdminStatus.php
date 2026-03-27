@@ -20,7 +20,7 @@ class CheckAdminStatus
             $admin = Auth::guard('admin')->user();
 
             if ($admin->status === 'inactive') {
-                abort(403, 'حسابك غير مفعل، لا يمكنك الدخول.');
+                abort(403, 'Wrong Jihad');
             }
         }
         return $next($request);

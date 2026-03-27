@@ -68,13 +68,7 @@ type UniversityMajor = {
     };
   };
 };
-type UniversityPost = {
-  public_id: string;
-  title: string | null;
-  content: string | null;
-  created_at: string | null;
-  likes_count: number | 0;
-}
+
 
 type UniversityData = {
   public_id: string;
@@ -93,7 +87,6 @@ type UniversityData = {
   fees?: number | null;
   images?: UniversityImage[];
   universityMajors?: UniversityMajor[];
-  articles?: UniversityPost[];
 };
 
 type PageProps = {
@@ -105,7 +98,6 @@ export default function UniversityDetails() {
   const { t, language } = useLanguage();
   const { universityData } = usePage<PageProps>().props;
 
-  const [likedArticles, setLikedArticles] = useState<Set<string>>(new Set());
   const [userRating, setUserRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [isRated, setIsRated] = useState(false);
@@ -250,29 +242,9 @@ export default function UniversityDetails() {
     );
   };
 
-  const toggleLike = (articleId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
 
-    // إرسال الإعجاب إلى Laravel عبر Inertia
-    router.post(
-      `/articles/${articleId}/like`,
-      {},
-      {
-        onSuccess: () => {
-          const newLiked = new Set(likedArticles);
-          if (newLiked.has(articleId)) {
-            newLiked.delete(articleId);
-          } else {
-            newLiked.add(articleId);
-          }
-          setLikedArticles(newLiked);
-        },
-      },
-    );
-  };
 
   // Articles placeholder until backend provides them for a university
-  const universityPosts = uni?.articles ?? [];
   const uniColleges = groupedColleges;
 
   return (
@@ -409,14 +381,7 @@ export default function UniversityDetails() {
                   ? 'الكليات والتخصصات'
                   : 'Colleges & Majors'}
               </TabsTrigger>
-              <TabsTrigger
-                value="articles"
-                className="rounded-none border-b-2 border-transparent px-4 py-3 text-sm whitespace-nowrap data-[state=active]:border-primary data-[state=active]:bg-transparent md:px-6 md:text-base"
-              >
-                {language === 'ar'
-                  ? 'المقالات والأخبار'
-                  : 'Articles & News'}
-              </TabsTrigger>
+
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
@@ -675,134 +640,7 @@ export default function UniversityDetails() {
 
 
 
-            <TabsContent value="articles">
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {universityPosts.length > 0 ? (
-                  universityPosts.map((article) => (
-                    <Card
-                      key={article.public_id}
-                      className="group overflow-hidden border-border/50 transition-all hover:shadow-md"
-                    >
-                      <div className="flex h-full flex-col sm:flex-row">
-                        <div className="relative h-48 w-full overflow-hidden sm:h-auto sm:w-1/3">
-                          <img
-                            src={uni.image_background ?? uni.image_path ?? 'https://via.placeholder.com/800x450'}
-                            className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
-                          />
-                        </div>
-                        <div className="flex flex-1 flex-col justify-between p-4 md:p-6">
-                          <div>
-                            <h3 className="mb-2 line-clamp-2 text-lg font-bold transition-colors group-hover:text-primary">
-                              {language === 'ar'
-                                ? article.titleAr
-                                : article.title}
-                            </h3>
-                            <p className="line-clamp-2 text-sm text-muted-foreground">
-                                {stripHtml(article.content?? "").result}
 
-                            </p>
-                          </div>
-                          <div className="mt-4 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <BookOpen className="h-3 w-3" />
-                                {article.created_at}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className={`h-8 w-8 rounded-full transition-colors ${likedArticles.has(article.public_id) ? 'text-red-500 hover:text-red-600' : 'text-muted-foreground hover:text-red-500'}`}
-                                  onClick={(
-                                    e,
-                                  ) =>
-                                    toggleLike(
-                                      article.public_id,
-                                      e,
-                                    )
-                                  }
-                                >
-                                  <Heart
-                                    className={`h-4 w-4 ${likedArticles.has(article.public_id) ? 'fill-current' : ''}`}
-                                  />
-                                </Button>
-                                <span className="text-xs text-muted-foreground">
-                                  {article.likes_count +
-                                    (likedArticles.has(
-                                      article.public_id,
-                                    )
-                                      ? 1
-                                      : 0)}
-                                </span>
-                              </div>
-                            </div>
-                            <Dialog>
-                              <DialogTrigger
-                                asChild
-                              >
-                                <Button
-                                  variant="link"
-                                  size="sm"
-                                  className="h-auto p-0 text-xs font-bold text-primary"
-                                >
-                                  {t(
-                                    'readMore',
-                                  )}{' '}
-                                  <ArrowRight className="ml-1 h-3 w-3 rtl:mr-1 rtl:ml-0 rtl:rotate-180" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                  <DialogTitle className="text-2xl font-bold">
-                                    {language ===
-                                      'ar'
-                                      ? article.titleAr
-                                      : article.title}
-                                  </DialogTitle>
-                                  <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
-                                    <span className="font-bold text-primary">
-                                      {language ===
-                                        'ar'
-                                        ? article.universityNameAr
-                                        : uni.name}
-                                    </span>
-                                    <span>
-                                      {
-                                        article.created_at
-                                      }
-                                    </span>
-                                  </div>
-                                </DialogHeader>
-                                <div className="mt-4 space-y-4">
-                                  <img
-                                    src={
-                                      uni.image_background ??
-                                      uni.image_path ??
-                                      'https://via.placeholder.com/800x450'
-                                    }
-                                    className="h-64 w-full rounded-lg object-cover"
-                                    alt=""
-                                  />
-                                  <p className="text-lg leading-relaxed text-muted-foreground">
-                                     {stripHtml(article.content?? "").result}
-                                  </p>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  ))
-                ) : (
-                  <div className="col-span-full rounded-xl border border-dashed bg-muted/20 py-12 text-center text-muted-foreground">
-                    {language === 'ar'
-                      ? 'لا توجد مقالات لهذه الجامعة حالياً'
-                      : 'No articles available for this university yet.'}
-                  </div>
-                )}
-              </div>
-            </TabsContent>
           </Tabs>
         </div>
       </Layout>

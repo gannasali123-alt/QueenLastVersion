@@ -64,7 +64,7 @@ class University extends Authenticatable implements HasEmailAuthentication, HasA
 
 public function street()
 {
-    return $this->belongsTo(Street::class, 'address'); 
+    return $this->belongsTo(Street::class, 'address');
 }
 
     /**
@@ -113,10 +113,7 @@ public function universityMajors()
   return $this->hasMany(UniversityMajor::class);
 }
 
-public function universityPosts()
-{
-  return $this->hasMany(UniversityPost::class);
-}
+
 
     public function images()
     {
